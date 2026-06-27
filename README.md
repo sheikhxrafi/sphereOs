@@ -73,6 +73,9 @@ The sphere has 64 cards. Images map in order—first URL to the first card, seco
 - Drag to orbit. Scroll (or use the radius slider in the editor) to expand and contract the sphere.
 
 ---
+## example
+<img width="1331" height="900" alt="Image" src="https://github.com/user-attachments/assets/0c25fa43-58d2-4c0b-9d3e-4804d405d09e" />
+
 
 ## License
 
