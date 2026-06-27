@@ -55,7 +55,9 @@ imageUrls: [
 ## The Exact Prompt to Give your Coding agent
 Paste this into Claude Code, Cursor, or any AI builder:
 ```md
-I have a 3D sphere gallery with 64 card placeholders. The code has an "imageUrls" array in the "CONFIG" object. Replace the empty strings with these 64 image URLs: [paste your URLs here]. Keep the array format exactly as it is with commas and quotes.
+I have a 3D sphere gallery with 64 card placeholders. The code has an "imageUrls"
+array in the "CONFIG" object. Replace the empty strings with these 64 image URLs:
+[paste your URLs here].Keep the array format exactly as it is with commas and quotes.
 ```
 
 
