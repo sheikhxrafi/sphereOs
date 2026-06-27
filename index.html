@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Gallery Sphere</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #171717;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+        #canvas-container:active {
+            cursor: grabbing;
+        }
+        .sidebar {
+            position: fixed;
+            right: 28px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(28, 28, 28, 0.75);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 28px;
+            width: 240px;
+            color: #fff;
+            z-index: 10;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .sidebar h3 {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 20px;
+        }
+        .control {
+            margin-bottom: 24px;
+        }
+        .control:last-of-type {
+            margin-bottom: 0;
+        }
+        .control label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.85);
+            margin-bottom: 10px;
+        }
+        .control input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 2px;
+            outline: none;
+            transition: background 0.2s;
+        }
+        .control input[type="range"]:hover {
+            background: rgba(255,255,255,0.18);
+        }
+        .control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: transform 0.15s;
+        }
+        .control input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+        .control input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .value {
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.5);
+            text-align: right;
+            margin-top: 6px;
+            font-variant-numeric: tabular-nums;
+        }
+        .hint {
+            font-size: 11px;
+            color: rgba(255,255,255,0.35);
+            line-height: 1.6;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .hint strong {
+            color: rgba(255,255,255,0.55);
+            font-weight: 600;
+        }
+
+        .copy-btn {
+            position: fixed;
+            right: 28px;
+            bottom: 28px;
+            width: 48px;
+            height: 48px;
+            background: rgba(28, 28, 28, 0.75);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.15s, background 0.2s;
+            outline: none;
+        }
+        .copy-btn:hover {
+            transform: scale(1.08);
+            background: rgba(40, 40, 40, 0.85);
+        }
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+        .copy-btn svg {
+            width: 20px;
+            height: 20px;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                right: auto;
+                left: 50%;
+                top: auto;
+                bottom: 24px;
+                transform: translateX(-50%) translateY(0);
+                width: calc(100% - 48px);
+                max-width: 320px;
+                padding: 20px;
+            }
+            .copy-btn {
+                right: 20px;
+                top: 20px;
+                bottom: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="sidebar">
+        <h3>Controls</h3>
+        <div class="control">
+            <label>Sphere Radius</label>
+            <input type="range" id="radiusSlider" min="0.5" max="2.0" step="0.01" value="1.0">
+            <div class="value" id="radiusValue">1.00×</div>
+        </div>
+        <div class="control">
+            <label>Rotation Speed</label>
+            <input type="range" id="speedSlider" min="0" max="0.5" step="0.01" value="0.05">
+            <div class="value" id="speedValue">0.05</div>
+        </div>
+        <div class="hint">
+            <strong>Scroll to Space</strong><br>
+            Hover the canvas and scroll to expand or contract the sphere. Drag to orbit.
+        </div>
+    </div>
+
+    <button class="copy-btn" id="copyBtn" aria-label="Copy component code">
+        <svg id="copyIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <svg id="checkIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+    </button>
+
+    <textarea id="export-template" style="display:none">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Gallery Sphere</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; font-family: sans-serif; }
+        #canvas-container { width: 100%; height: 100%; cursor: grab; }
+        #canvas-container:active { cursor: grabbing; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const CONFIG = {
+            imageUrls: [
+                // Add your image URLs here, e.g.:
+                // 'https://example.com/photo1.jpg',
+                // 'https://example.com/photo2.jpg'
+            ],
+            sphereRadius: {{RADIUS}},
+            rotationSpeed: {{SPEED}}
+        };
+
+        const scene = new THREE.Scene();
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const dist = 13;
+        const elev = 15 * (Math.PI / 180);
+        const azim = 20 * (Math.PI / 180);
+        camera.position.set(
+            dist * Math.sin(azim) * Math.cos(elev),
+            dist * Math.sin(elev),
+            dist * Math.cos(azim) * Math.cos(elev)
+        );
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.enableZoom = false;
+        controls.minDistance = 6;
+        controls.maxDistance = 30;
+        controls.target.set(0, 0, 0);
+        controls.update();
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+        scene.add(ambient);
+
+        const keyLight = new THREE.DirectionalLight(0xfff8f0, 1.3);
+        keyLight.position.set(-10, 12, 6);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.set(2048, 2048);
+        keyLight.shadow.camera.near = 1;
+        keyLight.shadow.camera.far = 40;
+        keyLight.shadow.camera.left = -12;
+        keyLight.shadow.camera.right = 12;
+        keyLight.shadow.camera.top = 12;
+        keyLight.shadow.camera.bottom = -12;
+        keyLight.shadow.bias = -0.0002;
+        keyLight.shadow.radius = 5;
+        keyLight.shadow.normalBias = 0.02;
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0xe8ecf0, 0.35);
+        fillLight.position.set(8, 4, -8);
+        scene.add(fillLight);
+
+        const rimLight = new THREE.DirectionalLight(0xffffff, 0.45);
+        rimLight.position.set(2, 8, -12);
+        scene.add(rimLight);
+
+        const cardCount = 64;
+        const baseRadius = 5.5;
+        const cards = [];
+        const group = new THREE.Group();
+        scene.add(group);
+
+        const material = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            roughness: 0.92,
+            metalness: 0.0,
+            side: THREE.DoubleSide
+        });
+
+        const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+
+        for (let i = 0; i < cardCount; i++) {
+            const y = 1 - (i / (cardCount - 1)) * 2;
+            const r = Math.sqrt(1 - y * y);
+            const theta = goldenAngle * i;
+
+            const nx = Math.cos(theta) * r;
+            const ny = y;
+            const nz = Math.sin(theta) * r;
+
+            const isLandscape = Math.random() > 0.42;
+            const sizeRoll = Math.random();
+            let w, h;
+
+            if (sizeRoll < 0.33) {
+                w = isLandscape ? 0.55 + Math.random() * 0.35 : 0.35 + Math.random() * 0.25;
+                h = isLandscape ? 0.35 + Math.random() * 0.25 : 0.55 + Math.random() * 0.35;
+            } else if (sizeRoll < 0.66) {
+                w = isLandscape ? 0.85 + Math.random() * 0.45 : 0.45 + Math.random() * 0.35;
+                h = isLandscape ? 0.45 + Math.random() * 0.35 : 0.85 + Math.random() * 0.45;
+            } else {
+                w = isLandscape ? 1.15 + Math.random() * 0.55 : 0.65 + Math.random() * 0.45;
+                h = isLandscape ? 0.65 + Math.random() * 0.45 : 1.15 + Math.random() * 0.55;
+            }
+
+            const geom = new THREE.PlaneGeometry(w, h);
+            const mesh = new THREE.Mesh(geom, material.clone());
+
+            const dir = new THREE.Vector3(nx, ny, nz).normalize();
+            mesh.userData.dir = dir;
+            mesh.userData.baseRadius = baseRadius;
+
+            mesh.userData.tiltX = (Math.random() - 0.5) * 0.18;
+            mesh.userData.tiltY = (Math.random() - 0.5) * 0.18;
+            mesh.userData.spinZ = (Math.random() - 0.5) * 0.5;
+
+            mesh.position.copy(dir.clone().multiplyScalar(baseRadius * CONFIG.sphereRadius));
+
+            const dummy = new THREE.Object3D();
+            dummy.position.copy(mesh.position);
+            dummy.lookAt(0, 0, 0);
+            mesh.quaternion.copy(dummy.quaternion);
+            mesh.rotateY(Math.PI);
+            mesh.rotateX(mesh.userData.tiltX);
+            mesh.rotateY(mesh.userData.tiltY);
+            mesh.rotateZ(mesh.userData.spinZ);
+
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            cards.push(mesh);
+            group.add(mesh);
+        }
+
+        const loader = new THREE.TextureLoader();
+        CONFIG.imageUrls.forEach((url, i) => {
+            if (cards[i]) {
+                loader.load(url, (tex) => {
+                    cards[i].material.map = tex;
+                    cards[i].material.needsUpdate = true;
+                });
+            }
+        });
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+
+            cards.forEach(mesh => {
+                const r = mesh.userData.baseRadius * CONFIG.sphereRadius;
+                mesh.position.copy(mesh.userData.dir.clone().multiplyScalar(r));
+
+                const dummy = new THREE.Object3D();
+                dummy.position.copy(mesh.position);
+                dummy.lookAt(0, 0, 0);
+                mesh.quaternion.copy(dummy.quaternion);
+                mesh.rotateY(Math.PI);
+                mesh.rotateX(mesh.userData.tiltX);
+                mesh.rotateY(mesh.userData.tiltY);
+                mesh.rotateZ(mesh.userData.spinZ);
+            });
+
+            group.rotation.y += CONFIG.rotationSpeed * dt;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
+    </textarea>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x171717);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const dist = 13;
+        const elev = 15 * (Math.PI / 180);
+        const azim = 20 * (Math.PI / 180);
+        camera.position.set(
+            dist * Math.sin(azim) * Math.cos(elev),
+            dist * Math.sin(elev),
+            dist * Math.cos(azim) * Math.cos(elev)
+        );
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.enableZoom = false;
+        controls.minDistance = 6;
+        controls.maxDistance = 30;
+        controls.target.set(0, 0, 0);
+        controls.update();
+
+        const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+        scene.add(ambient);
+
+        const keyLight = new THREE.DirectionalLight(0xfff8f0, 1.3);
+        keyLight.position.set(-10, 12, 6);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.set(2048, 2048);
+        keyLight.shadow.camera.near = 1;
+        keyLight.shadow.camera.far = 40;
+        keyLight.shadow.camera.left = -12;
+        keyLight.shadow.camera.right = 12;
+        keyLight.shadow.camera.top = 12;
+        keyLight.shadow.camera.bottom = -12;
+        keyLight.shadow.bias = -0.0002;
+        keyLight.shadow.radius = 5;
+        keyLight.shadow.normalBias = 0.02;
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0xe8ecf0, 0.35);
+        fillLight.position.set(8, 4, -8);
+        scene.add(fillLight);
+
+        const rimLight = new THREE.DirectionalLight(0xffffff, 0.45);
+        rimLight.position.set(2, 8, -12);
+        scene.add(rimLight);
+
+        const cardCount = 64;
+        const baseRadius = 5.5;
+        const cards = [];
+        const group = new THREE.Group();
+        scene.add(group);
+
+        const material = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            roughness: 0.92,
+            metalness: 0.0,
+            side: THREE.DoubleSide
+        });
+
+        const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+
+        for (let i = 0; i < cardCount; i++) {
+            const y = 1 - (i / (cardCount - 1)) * 2;
+            const r = Math.sqrt(1 - y * y);
+            const theta = goldenAngle * i;
+
+            const nx = Math.cos(theta) * r;
+            const ny = y;
+            const nz = Math.sin(theta) * r;
+
+            const isLandscape = Math.random() > 0.42;
+            const sizeRoll = Math.random();
+            let w, h;
+
+            if (sizeRoll < 0.33) {
+                w = isLandscape ? 0.55 + Math.random() * 0.35 : 0.35 + Math.random() * 0.25;
+                h = isLandscape ? 0.35 + Math.random() * 0.25 : 0.55 + Math.random() * 0.35;
+            } else if (sizeRoll < 0.66) {
+                w = isLandscape ? 0.85 + Math.random() * 0.45 : 0.45 + Math.random() * 0.35;
+                h = isLandscape ? 0.45 + Math.random() * 0.35 : 0.85 + Math.random() * 0.45;
+            } else {
+                w = isLandscape ? 1.15 + Math.random() * 0.55 : 0.65 + Math.random() * 0.45;
+                h = isLandscape ? 0.65 + Math.random() * 0.45 : 1.15 + Math.random() * 0.55;
+            }
+
+            const geom = new THREE.PlaneGeometry(w, h);
+            const mesh = new THREE.Mesh(geom, material);
+
+            const dir = new THREE.Vector3(nx, ny, nz).normalize();
+            mesh.userData.dir = dir;
+            mesh.userData.baseRadius = baseRadius;
+
+            mesh.userData.tiltX = (Math.random() - 0.5) * 0.18;
+            mesh.userData.tiltY = (Math.random() - 0.5) * 0.18;
+            mesh.userData.spinZ = (Math.random() - 0.5) * 0.5;
+
+            mesh.position.copy(dir.clone().multiplyScalar(baseRadius));
+
+            const dummy = new THREE.Object3D();
+            dummy.position.copy(mesh.position);
+            dummy.lookAt(0, 0, 0);
+            mesh.quaternion.copy(dummy.quaternion);
+            mesh.rotateY(Math.PI);
+            mesh.rotateX(mesh.userData.tiltX);
+            mesh.rotateY(mesh.userData.tiltY);
+            mesh.rotateZ(mesh.userData.spinZ);
+
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            cards.push(mesh);
+            group.add(mesh);
+        }
+
+        let targetMult = 1.0;
+        let currentMult = 1.0;
+        const radiusSlider = document.getElementById('radiusSlider');
+        const radiusValue = document.getElementById('radiusValue');
+
+        renderer.domElement.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY * -0.0015;
+            targetMult = Math.max(0.5, Math.min(2.0, targetMult + delta));
+            radiusSlider.value = targetMult;
+            radiusValue.textContent = targetMult.toFixed(2) + '×';
+        }, { passive: false });
+
+        radiusSlider.addEventListener('input', (e) => {
+            targetMult = parseFloat(e.target.value);
+            radiusValue.textContent = targetMult.toFixed(2) + '×';
+        });
+
+        let rotSpeed = 0.05;
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        speedSlider.addEventListener('input', (e) => {
+            rotSpeed = parseFloat(e.target.value);
+            speedValue.textContent = rotSpeed.toFixed(2);
+        });
+
+        const copyBtn = document.getElementById('copyBtn');
+        const copyIcon = document.getElementById('copyIcon');
+        const checkIcon = document.getElementById('checkIcon');
+
+        copyBtn.addEventListener('click', async () => {
+            const template = document.getElementById('export-template').value;
+            const code = template
+                .replace('{{RADIUS}}', currentMult.toFixed(2))
+                .replace('{{SPEED}}', rotSpeed.toFixed(2));
+            try {
+                await navigator.clipboard.writeText(code);
+                copyIcon.style.display = 'none';
+                checkIcon.style.display = 'block';
+                setTimeout(() => {
+                    copyIcon.style.display = 'block';
+                    checkIcon.style.display = 'none';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+        });
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+
+            currentMult += (targetMult - currentMult) * Math.min(1.0, dt * 8);
+
+            cards.forEach(mesh => {
+                const r = mesh.userData.baseRadius * currentMult;
+                mesh.position.copy(mesh.userData.dir.clone().multiplyScalar(r));
+
+                const dummy = new THREE.Object3D();
+                dummy.position.copy(mesh.position);
+                dummy.lookAt(0, 0, 0);
+                mesh.quaternion.copy(dummy.quaternion);
+                mesh.rotateY(Math.PI);
+                mesh.rotateX(mesh.userData.tiltX);
+                mesh.rotateY(mesh.userData.tiltY);
+                mesh.rotateZ(mesh.userData.spinZ);
+            });
+
+            group.rotation.y += rotSpeed * dt;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
